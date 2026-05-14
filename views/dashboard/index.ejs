@@ -1,0 +1,311 @@
+<div class="page-header">
+  <div class="page-title">Gate Control <span>Dashboard</span></div>
+  <div class="page-sub">Real-time PLC monitoring &mdash; Alphatech Solutions</div>
+</div>
+
+<!-- Role notice for viewers -->
+<% if (user.role === 'viewer') { %>
+<div class="role-notice">
+  <i class="fa-solid fa-eye"></i>
+  You are in <strong>view-only</strong> mode. Contact an administrator to enable gate control.
+</div>
+<% } %>
+
+<div class="two-col-grid">
+
+  <!-- ── 1. CONTROL OPERATIONS ── -->
+  <div class="sec-card">
+    <div class="sec-header">
+      <div class="sec-num">1</div>
+      <span class="sec-title">Control Operations</span>
+    </div>
+    <div class="sec-body">
+      <div class="ctrl-sub">Motor Control Operation</div>
+      <div class="ctrl-btns">
+        <button class="ctrl-btn btn-forward" id="btn-m1"
+          onclick="sendMotorCmd('FORWARD')"
+          <%= user.role === 'viewer' ? 'disabled title="View-only access"' : '' %>>
+         FORWARD
+        </button>
+        <button class="ctrl-btn btn-reverse" id="btn-m2"
+          onclick="sendMotorCmd('REVERSE')"
+          <%= user.role === 'viewer' ? 'disabled title="View-only access"' : '' %>>
+          REVERSE
+        </button>
+        <button class="ctrl-btn btn-stop" id="btn-m3"
+          onclick="sendMotorCmd('STOP')"
+          <%= user.role === 'viewer' ? 'disabled title="View-only access"' : '' %>>
+          STOP
+        </button>
+      </div>
+
+      <!-- Q1 / Q2 Output Coil Status – driven ONLY by polled PLC data -->
+      <div class="ctrl-sub" style="margin-top:14px;">Output Coil Status</div>
+      <div class="coil-status-row">
+        <div class="coil-item">
+          <div class="coil-dot off" id="dot-q1"></div>
+          <div class="coil-info">
+            <span class="coil-label">Q1 &#8211; Forward</span>
+            <span class="coil-state off" id="state-q1">OFF</span>
+          </div>
+        </div>
+        <div class="coil-item">
+          <div class="coil-dot off" id="dot-q2"></div>
+          <div class="coil-info">
+            <span class="coil-label">Q2 &#8211; Reverse</span>
+            <span class="coil-state off" id="state-q2">OFF</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 2. INPUT STATUS INDICATIONS ── -->
+  <div class="sec-card">
+    <div class="sec-header">
+      <div class="sec-num">2</div>
+      <span class="sec-title">Input Status Indications</span>
+    </div>
+    <div class="sec-body">
+      <div class="out-sub">Status of the Input Indication</div>
+      <div class="input-status-grid">
+        <div class="inp-item">
+          <div class="inp-dot off" id="dot-i4"></div>
+          <div class="inp-info">
+            <span class="inp-label">I4</span>
+            <span class="inp-state off" id="state-i4">OFF</span>
+          </div>
+        </div>
+        <div class="inp-item">
+          <div class="inp-dot off" id="dot-i5"></div>
+          <div class="inp-info">
+            <span class="inp-label">I5</span>
+            <span class="inp-state off" id="state-i5">OFF</span>
+          </div>
+        </div>
+        <div class="inp-item">
+          <div class="inp-dot off" id="dot-i6"></div>
+          <div class="inp-info">
+            <span class="inp-label">I6</span>
+            <span class="inp-state off" id="state-i6">OFF</span>
+          </div>
+        </div>
+        <div class="inp-item">
+          <div class="inp-dot off" id="dot-i7"></div>
+          <div class="inp-info">
+            <span class="inp-label">I7</span>
+            <span class="inp-state off" id="state-i7">OFF</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /two-col-grid -->
+
+<script>
+/* ─── Dashboard JS ─── */
+
+/* Update a discrete input dot (I4-I7) */
+function updateInputDot(id, isOn){
+  var dot=document.getElementById('dot-'+id);
+  var st=document.getElementById('state-'+id);
+  if(!dot||!st) return;
+  dot.className='inp-dot '+(isOn?'on':'off');
+  st.className='inp-state '+(isOn?'on':'off');
+  st.textContent=isOn?'ON':'OFF';
+}
+
+/* Poll /api/plc/read every 2s – source of truth for ALL indicators */
+async function loadData(){
+  try {
+    const res=await fetch('/api/plc/read');
+    const json=await res.json();
+    if(!json.success) throw new Error('Bad response');
+
+    var raw=json.data;
+    var items=Array.isArray(raw)?raw:(raw&&Array.isArray(raw.data))?raw.data:[];
+
+    items.forEach(function(item){
+      var addr=String(item.address);
+      var val=parseInt(item.value);
+
+      /* Discrete Inputs I4-I7 — DI addresses 4, 5, 6, 7 */
+      if(addr==='4') { updateInputDot('i4', !!val); return; }
+      if(addr==='5') { updateInputDot('i5', !!val); return; }
+      if(addr==='6') { updateInputDot('i6', !!val); return; }
+      if(addr==='7') { updateInputDot('i7', !!val); return; }
+
+      /* Output Coils Q1=8193 (Coil 8193), Q2=8194 (Coil 8194) */
+      if(addr==='8193') { updateCoilDot('q1', !!val); return; }
+      if(addr==='8194') { updateCoilDot('q2', !!val); return; }
+    });
+
+    setPill(true);
+  } catch(e){
+    setPill(false);
+  }
+}
+
+function setPill(online){
+  var p=document.getElementById('sys-pill');
+  if(!p) return;
+  if(online){
+    p.className='device-pill active';
+    p.querySelector('span:last-child').textContent='SYSTEM ACTIVE';
+  } else {
+    p.className='device-pill';
+    p.style.color='var(--red)';
+    p.style.borderColor='#fecaca';
+    p.style.background='var(--red-light)';
+    p.querySelector('span:last-child').textContent='OFFLINE';
+  }
+}
+
+/* ── Button state management ────────────────────────────────────────────────
+   motorState: 'IDLE' | 'FORWARD' | 'REVERSE'
+
+   Rules:
+   - FORWARD running → Reverse button disabled, Forward active-btn, Stop enabled
+   - REVERSE running → Forward button disabled, Reverse active-btn, Stop enabled
+   - STOP / IDLE     → Forward & Reverse both enabled, Stop disabled
+──────────────────────────────────────────────────────────────────────────── */
+var motorState = 'IDLE';
+
+function applyButtonState(state){
+  var bm1=document.getElementById('btn-m1'),
+      bm2=document.getElementById('btn-m2'),
+      bm3=document.getElementById('btn-m3');
+  if(!bm1||!bm2||!bm3) return;
+
+  /* Reset all first */
+  bm1.disabled=false; bm1.classList.remove('active-btn');
+  bm2.disabled=false; bm2.classList.remove('active-btn');
+  bm3.disabled=false; bm3.classList.remove('active-btn');
+
+  if(state==='FORWARD'){
+    bm2.disabled=true;   /* Reverse disabled while Forward running */
+    bm3.disabled=false;
+    bm1.classList.add('active-btn');
+  } else if(state==='REVERSE'){
+    bm1.disabled=true;   /* Forward disabled while Reverse running */
+    bm3.disabled=false;
+    bm2.classList.add('active-btn');
+  } else {
+    /* IDLE / STOP — both Forward & Reverse enabled, Stop disabled */
+    bm3.disabled=true;
+  }
+}
+
+/* Update coil dots AND sync button state from PLC poll data */
+function updateCoilDot(id, isOn){
+  var dot=document.getElementById('dot-'+id);
+  var st=document.getElementById('state-'+id);
+  if(!dot||!st) return;
+  dot.className='coil-dot '+(isOn?'on':'off');
+  st.className='coil-state '+(isOn?'on':'off');
+  st.textContent=isOn?'ON':'OFF';
+
+  /* q1 = Forward coil, q2 = Reverse coil */
+  if(id==='q1' && isOn)      { motorState='FORWARD';  applyButtonState('FORWARD'); }
+  else if(id==='q2' && isOn) { motorState='REVERSE';  applyButtonState('REVERSE'); }
+  else if(id==='q1' && !isOn && motorState==='FORWARD') { motorState='IDLE'; applyButtonState('IDLE'); }
+  else if(id==='q2' && !isOn && motorState==='REVERSE') { motorState='IDLE'; applyButtonState('IDLE'); }
+}
+
+/* ── Send motor command ─────────────────────────────────────────────────────
+   Each button:
+     - Sends value "01" (start pulse) immediately
+     - After 2 seconds, automatically sends "00" (stop pulse)
+
+   FORWARD: writes 01 to ADDR_FORWARD (8257), disables Reverse button;
+            after 2s auto-sends STOP
+   REVERSE: writes 01 to ADDR_REVERSE (8258), disables Forward button;
+            after 2s auto-sends STOP
+   STOP:    writes 01 to ADDR_STOP (8259), then after 2s sends 00;
+            state goes IDLE immediately
+──────────────────────────────────────────────────────────────────────────── */
+async function sendMotorCmd(cmd){
+  var bm1=document.getElementById('btn-m1'),
+      bm2=document.getElementById('btn-m2'),
+      bm3=document.getElementById('btn-m3');
+
+  /* Disable all during write */
+  bm1.disabled=true; bm2.disabled=true; bm3.disabled=true;
+
+  try {
+    /* Send the command (value=01 for FORWARD/REVERSE/STOP) */
+    const res=await fetch('/api/plc/write',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cmd:cmd})
+    });
+    const json=await res.json();
+    if(!json.success) throw new Error(json.message||'Write failed');
+
+    /* Update mode bar text */
+    var bar=document.getElementById('mode-bar');
+    if(bar){
+      if(cmd==='FORWARD'){
+        bar.textContent='\u2B24  Motor FORWARD (M1) \u2013 running';
+      } else if(cmd==='REVERSE'){
+        bar.textContent='\u2B24  Motor REVERSE (M2) \u2013 running';
+      } else {
+        bar.textContent='\u2B24  Motor STOPPED (M3) \u2013 system idle';
+      }
+    }
+
+    showToast(cmd+' command sent \u2713 (auto-reset in 2s)', false);
+
+    /* Apply immediate button state based on command */
+    if(cmd==='FORWARD'){
+      motorState='FORWARD';
+      applyButtonState('FORWARD');
+    } else if(cmd==='REVERSE'){
+      motorState='REVERSE';
+      applyButtonState('REVERSE');
+    } else {
+      /* STOP pressed: immediately go IDLE */
+      motorState='IDLE';
+      applyButtonState('IDLE');
+    }
+
+    /* ── Auto-reset: send 00 command after 2 seconds ─────────────────────
+       All commands (FORWARD, REVERSE, STOP) auto-send a STOP_RESET after 2s
+       so the coil pulse (01) is followed by release (00).
+    ──────────────────────────────────────────────────────────────────── */
+    setTimeout(async function(){
+      try {
+        await fetch('/api/plc/write',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({cmd:'STOP_RESET'})
+        });
+        showToast('Auto-reset sent \u2713', false);
+        /* After auto-reset, state goes to IDLE */
+        motorState='IDLE';
+        applyButtonState('IDLE');
+        /* Trigger immediate poll to refresh coil status */
+        loadData();
+      } catch(e2){
+        showToast('Auto-reset failed: '+e2.message, true);
+      }
+    }, 2000);
+
+    /* Trigger an immediate poll so indicators refresh quickly */
+    loadData();
+
+  } catch(e){
+    showToast('Write failed: '+e.message, true);
+    /* Restore based on current known state */
+    applyButtonState(motorState);
+    return;
+  }
+}
+
+setInterval(loadData, 2000);
+loadData();
+/* STOP disabled at start since system is idle */
+applyButtonState('IDLE');
+</script>

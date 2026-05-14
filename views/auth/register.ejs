@@ -1,0 +1,38 @@
+<h2>Create account</h2>
+<p class="auth-sub">Register for CloudSCADA access</p>
+
+<% if (error) { %>
+<div class="error-box">
+  <i class="fa-solid fa-circle-exclamation"></i>
+  <%= error %>
+</div>
+<% } %>
+
+<form method="POST" action="/auth/register">
+  <div class="form-group">
+    <label for="name">Full Name</label>
+    <input type="text" id="name" name="name" placeholder="John Smith" required autocomplete="name">
+  </div>
+  <div class="form-group">
+    <label for="email">Email Address</label>
+    <input type="email" id="email" name="email" placeholder="you@company.com" required autocomplete="email">
+  </div>
+  <div class="form-group">
+    <label for="password">Password <span style="font-weight:400;color:#aaa">(min 6 chars)</span></label>
+    <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="new-password">
+  </div>
+  <button type="submit" class="btn-auth">
+    <i class="fa-solid fa-user-plus"></i> Create Account
+  </button>
+</form>
+
+<div class="auth-link">
+  Already have an account? <a href="/auth/login">Sign in</a>
+</div>
+
+<hr class="divider">
+<p style="font-size:11px;color:#bbb;text-align:center">
+  <i class="fa-solid fa-circle-info"></i>
+  The first registered user is automatically granted <strong>admin</strong> role.
+  Subsequent users start as <strong>viewer</strong> and can be promoted by an admin.
+</p>

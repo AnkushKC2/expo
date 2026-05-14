@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= title %></title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<link rel="stylesheet" href="/css/main.css">
+</head>
+
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+
+    <span class="logo-text">
+      Cloud<span class="red">SCADA</span>
+    </span>
+
+    <div class="nav-badge">
+      <span class="pulse-dot"></span>
+      LIVE DASHBOARD
+    </div>
+
+    <div class="nav-right">
+
+      <div class="clock-badge" id="clock">
+        ----/--/-- --:--:--
+      </div>
+
+      <div class="device-pill active" id="sys-pill">
+        <span class="pulse-green"></span>
+        <span>SYSTEM ACTIVE</span>
+      </div>
+
+      <!-- USER MENU -->
+      <div class="user-menu">
+
+        <div class="user-trigger" onclick="toggleUserMenu()">
+
+          <div class="user-avatar">
+            <%= currentUser ? currentUser.name.charAt(0).toUpperCase() : 'G' %>
+          </div>
+
+          <div class="user-info">
+
+            <span class="user-name">
+              <%= currentUser ? currentUser.name : 'Guest User' %>
+            </span>
+
+            <span class="user-role">
+              <%= currentUser ? currentUser.role.toUpperCase() : 'USER' %>
+            </span>
+
+          </div>
+
+          <i class="fa-solid fa-chevron-down"
+             style="font-size:10px;color:#aaa">
+          </i>
+
+        </div>
+
+        <!-- DROPDOWN -->
+        <div class="user-dropdown" id="user-dropdown">
+
+          <div class="dd-info">
+
+            <div class="dd-name">
+              <%= currentUser ? currentUser.name : 'Guest User' %>
+            </div>
+
+            <div class="dd-email">
+              <%= currentUser ? currentUser.email : 'guest@cloudscada.in' %>
+            </div>
+
+          </div>
+
+          <hr class="dd-divider">
+
+          <% if (currentUser && currentUser.role === 'admin') { %>
+            <a href="/admin" class="dd-item">
+              <i class="fa-solid fa-shield-halved"></i>
+              Admin Panel
+            </a>
+          <% } %>
+
+          <a href="/auth/logout" class="dd-item dd-logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Logout
+          </a>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</nav>
+
+<!-- PAGE CONTENT -->
+<div class="main">
+  <%- body %>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  Cloud<span>SCADA</span>
+  &nbsp;|&nbsp;
+  &copy; 2026 Alphatech Solutions. All rights reserved.
+  &nbsp;|&nbsp;
+
+  <span style="margin-left:16px;color:rgba(255,255,255,0.2)"
+        id="footer-clock">
+  </span>
+</footer>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toast-icon"></span>
+  <span id="toast-msg"></span>
+</div>
+
+<script src="/js/app.js"></script>
+
+<script>
+
+/* CLOSE DROPDOWN ON OUTSIDE CLICK */
+document.addEventListener('click', function(e){
+
+  if(!e.target.closest('.user-menu')){
+    closeUserMenu();
+  }
+
+});
+
+function toggleUserMenu(){
+
+  document
+    .getElementById('user-dropdown')
+    .classList
+    .toggle('open');
+
+}
+
+function closeUserMenu(){
+
+  document
+    .getElementById('user-dropdown')
+    .classList
+    .remove('open');
+
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,243 @@
+<div class="page-header">
+  <div class="page-title">Admin <span>Panel</span></div>
+  <div class="page-sub">User management &amp; audit logs</div>
+</div>
+
+<div class="admin-grid">
+
+  <!-- ── CREATE USER ── -->
+  <div class="sec-card admin-wide">
+    <div class="sec-header">
+      <div class="sec-num">+</div>
+      <span class="sec-title">Create New User</span>
+    </div>
+    <div class="sec-body">
+      <div class="create-user-form" id="createUserForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" id="cu-name" class="form-input" placeholder="e.g. John Smith">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="cu-email" class="form-input" placeholder="user@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="cu-password" class="form-input" placeholder="Min. 6 characters">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select id="cu-role" class="form-input">
+              <option value="viewer">Viewer</option>
+              <option value="operator">Operator</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="form-group form-group-btn">
+            <label class="form-label">&nbsp;</label>
+            <button class="create-btn" onclick="createUser()">
+              <i class="fa fa-plus"></i> Create User
+            </button>
+          </div>
+        </div>
+        <div id="cu-msg" class="cu-msg" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── USERS TABLE ── -->
+  <div class="sec-card admin-wide">
+    <div class="sec-header">
+      <div class="sec-num">1</div>
+      <span class="sec-title">User Management</span>
+      <span id="user-count" style="margin-left:auto;font-size:11px;color:#888"><%= users.length %> users</span>
+    </div>
+    <div class="sec-body" style="padding:0">
+      <table class="admin-table" id="users-table">
+        <thead>
+          <tr>
+            <th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <% users.forEach(function(u){ %>
+          <tr id="user-row-<%= u.id %>">
+            <td><strong><%= u.name %></strong></td>
+            <td style="color:#666;font-size:12px"><%= u.email %></td>
+            <td>
+              <select class="role-select" data-uid="<%= u.id %>" <%= String(u.id) === String(user.id) ? 'disabled' : '' %>>
+                <option value="admin"    <%= u.role==='admin'    ?'selected':'' %>>Admin</option>
+                <option value="operator" <%= u.role==='operator' ?'selected':'' %>>Operator</option>
+                <option value="viewer"   <%= u.role==='viewer'   ?'selected':'' %>>Viewer</option>
+              </select>
+            </td>
+            <td>
+              <span class="status-badge <%= u.isActive?'active':'inactive' %>">
+                <%= u.isActive ? 'Active' : 'Inactive' %>
+              </span>
+            </td>
+            <td style="font-size:11px;color:#999">
+              <%= u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never' %>
+            </td>
+            <td>
+              <% if (String(u.id) !== String(user.id)) { %>
+              <button class="admin-btn" onclick="toggleUser('<%= u.id %>')">
+                <%= u.isActive ? 'Deactivate' : 'Activate' %>
+              </button>
+              <button class="admin-btn danger" onclick="deleteUser('<%= u.id %>', '<%= u.name %>')">Delete</button>
+              <% } else { %>
+              <span style="font-size:11px;color:#aaa">You</span>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── AUDIT LOG ── -->
+  <div class="sec-card admin-wide">
+    <div class="sec-header">
+      <div class="sec-num">2</div>
+      <span class="sec-title">Audit Log</span>
+      <span style="margin-left:auto;font-size:11px;color:#888">Last 100 events</span>
+    </div>
+    <div class="sec-body" style="padding:0">
+      <table class="admin-table">
+        <thead>
+          <tr><th>Time</th><th>User</th><th>Action</th><th>Detail</th><th>IP</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <% logs.forEach(function(l){ %>
+          <tr>
+            <td style="font-size:11px;color:#999;white-space:nowrap"><%= new Date(l.createdAt).toLocaleString() %></td>
+            <td style="font-size:12px"><%= l.email || '—' %></td>
+            <td><span class="action-badge <%= l.action.includes('GATE')?'gate':l.action.includes('LOGIN')?'auth':'' %>"><%= l.action %></span></td>
+            <td style="font-size:11px;color:#666"><%= l.detail || '—' %></td>
+            <td style="font-size:11px;color:#999"><%= l.ip || '—' %></td>
+            <td>
+              <span class="status-badge <%= l.success?'active':'inactive' %>">
+                <%= l.success ? 'OK' : 'FAIL' %>
+              </span>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── Role change ── */
+document.querySelectorAll('.role-select').forEach(function(sel){
+  sel.addEventListener('change', async function(){
+    const uid  = this.dataset.uid;
+    const role = this.value;
+    try {
+      const res  = await fetch('/admin/users/'+uid+'/role', {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({role})
+      });
+      const json = await res.json();
+      showToast(json.message, !json.success);
+    } catch(e){ showToast('Error: '+e.message, true); }
+  });
+});
+
+/* ── Toggle active ── */
+async function toggleUser(uid){
+  try {
+    const res  = await fetch('/admin/users/'+uid+'/toggle',{ method:'PATCH' });
+    const json = await res.json();
+    if(json.success) { showToast('User '+(json.isActive?'activated':'deactivated'), false); setTimeout(()=>location.reload(),1200); }
+    else showToast(json.message, true);
+  } catch(e){ showToast('Error: '+e.message, true); }
+}
+
+/* ── Delete ── */
+async function deleteUser(uid, name){
+  if(!confirm('Delete user '+name+'? This cannot be undone.')) return;
+  try {
+    const res  = await fetch('/admin/users/'+uid,{ method:'DELETE' });
+    const json = await res.json();
+    if(json.success){
+      document.getElementById('user-row-'+uid)?.remove();
+      showToast('User deleted', false);
+      const tbody = document.getElementById('users-tbody');
+      document.getElementById('user-count').textContent = tbody.children.length + ' users';
+    }
+    else showToast(json.message, true);
+  } catch(e){ showToast('Error: '+e.message, true); }
+}
+
+/* ── Create user ── */
+async function createUser(){
+  const name     = document.getElementById('cu-name').value.trim();
+  const email    = document.getElementById('cu-email').value.trim();
+  const password = document.getElementById('cu-password').value;
+  const role     = document.getElementById('cu-role').value;
+  const msgEl    = document.getElementById('cu-msg');
+
+  if(!name || !email || !password){
+    showCuMsg('All fields are required.', true); return;
+  }
+  try {
+    const res  = await fetch('/admin/users', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name, email, password, role })
+    });
+    const json = await res.json();
+    if(json.success){
+      showCuMsg('User created successfully!', false);
+      document.getElementById('cu-name').value = '';
+      document.getElementById('cu-email').value = '';
+      document.getElementById('cu-password').value = '';
+      document.getElementById('cu-role').value = 'viewer';
+      /* Append new row */
+      const u = json.user;
+      const tbody = document.getElementById('users-tbody');
+      const tr = document.createElement('tr');
+      tr.id = 'user-row-' + u.id;
+      tr.innerHTML = `
+        <td><strong>${u.name}</strong></td>
+        <td style="color:#666;font-size:12px">${u.email}</td>
+        <td>
+          <select class="role-select" data-uid="${u.id}">
+            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+            <option value="operator" ${u.role==='operator'?'selected':''}>Operator</option>
+            <option value="viewer" ${u.role==='viewer'?'selected':''}>Viewer</option>
+          </select>
+        </td>
+        <td><span class="status-badge active">Active</span></td>
+        <td style="font-size:11px;color:#999">Never</td>
+        <td>
+          <button class="admin-btn" onclick="toggleUser('${u.id}')">Deactivate</button>
+          <button class="admin-btn danger" onclick="deleteUser('${u.id}','${u.name}')">Delete</button>
+        </td>`;
+      tbody.appendChild(tr);
+      /* Wire role select on new row */
+      tr.querySelector('.role-select').addEventListener('change', async function(){
+        const uid = this.dataset.uid; const role = this.value;
+        const r = await fetch('/admin/users/'+uid+'/role',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({role})});
+        const j = await r.json(); showToast(j.message, !j.success);
+      });
+      document.getElementById('user-count').textContent = tbody.children.length + ' users';
+      showToast('User created', false);
+    } else {
+      showCuMsg(json.message, true);
+    }
+  } catch(e){ showCuMsg('Error: '+e.message, true); }
+}
+
+function showCuMsg(msg, isErr){
+  const el = document.getElementById('cu-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.color = isErr ? '#e60000' : '#16a34a';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+</script>

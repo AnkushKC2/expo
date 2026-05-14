@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= title %></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--red:#e60000;--dark:#0d0d0d;--gray:#6b6b6b;--border:rgba(0,0,0,0.1)}
+body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(135deg,#0d0d0d 0%,#1a1a1a 50%,#0d0d0d 100%);display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-box{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 32px 80px rgba(0,0,0,0.4)}
+.auth-logo{text-align:center;margin-bottom:28px}
+.auth-logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;color:#0d0d0d}
+.auth-logo-text span{color:var(--red)}
+.auth-logo-sub{font-size:11px;color:#999;letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:#0d0d0d;margin-bottom:6px}
+.auth-sub{font-size:13px;color:#888;margin-bottom:24px}
+.form-group{margin-bottom:16px}
+label{display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+input{width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;font-family:'Inter',sans-serif;transition:border-color 0.2s,box-shadow 0.2s;outline:none;color:#0d0d0d}
+input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(230,0,0,0.08)}
+.btn-auth{width:100%;padding:13px;background:var(--red);color:#fff;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:background 0.2s,transform 0.15s;margin-top:6px}
+.btn-auth:hover{background:#b30000;transform:translateY(-1px)}
+.btn-auth:active{transform:scale(0.98)}
+.auth-link{text-align:center;margin-top:18px;font-size:13px;color:#888}
+.auth-link a{color:var(--red);font-weight:600;text-decoration:none}
+.auth-link a:hover{text-decoration:underline}
+.error-box{background:#fff0f0;border:1px solid rgba(230,0,0,0.2);border-radius:10px;padding:11px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--red)}
+.divider{border:none;border-top:1px solid #f0f0f0;margin:20px 0}
+</style>
+</head>
+<body>
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-text">Cloud<span>SCADA</span></div>
+      <div class="auth-logo-sub">Alphatech Solutions</div>
+    </div>
+    <%- body %>
+  </div>
+</body>
+</html>
