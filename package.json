@@ -4,10 +4,10 @@
   "description": "CloudSCADA Gate Control Dashboard – Alphatech Solutions",
   "main": "server.js",
   "scripts": {
-  "start": "node server.js",
-  "dev": "nodemon server.js",
-  "build": "mkdir dist && copy server.js dist"
-},
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "mkdir -p dist && cp -r . dist"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
