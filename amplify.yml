@@ -1,26 +1,16 @@
 version: 1
 
-backend:
-  phases:
-    build:
-      commands:
-        - echo "No backend amplify resources"
-
 frontend:
   phases:
     preBuild:
       commands:
-        - npm ci
+        - npm install
 
     build:
       commands:
-        - echo "Build complete"
+        - npm run build
 
   artifacts:
-    baseDirectory: /
+    baseDirectory: dist
     files:
       - '**/*'
-
-  cache:
-    paths:
-      - node_modules/**/*
