@@ -1,5 +1,11 @@
 version: 1
 
+backend:
+  phases:
+    build:
+      commands:
+        - echo "No backend amplify resources"
+
 frontend:
   phases:
     preBuild:
@@ -8,10 +14,10 @@ frontend:
 
     build:
       commands:
-        - npm run build
+        - echo "Build complete"
 
   artifacts:
-    baseDirectory: dist
+    baseDirectory: /
     files:
       - '**/*'
 
